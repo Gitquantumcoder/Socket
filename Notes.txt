@@ -1,0 +1,542 @@
+PYTHON TCP SOCKET PROGRAM - NOTES
+=================================
+
+This file explains the functions, methods, and important concepts used in
+the beginner-level TCP socket program for creating a server and a client.
+
+1. IMPORT SOCKET
+----------------
+Code:
+    import socket
+
+Purpose:
+    The socket module is Python's built-in module for network communication.
+    It provides functions and methods required to create sockets, establish
+    connections, send data, receive data, and close connections.
+
+A socket acts as an endpoint of communication between two programs.
+
+2. socket.socket()
+------------------
+Code:
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+Purpose:
+    Creates a new socket object.
+
+Syntax:
+    socket.socket(address_family, socket_type)
+
+Arguments:
+    socket.AF_INET
+        Specifies IPv4 addressing.
+
+    socket.SOCK_STREAM
+        Specifies a TCP socket. TCP is connection-oriented and provides
+        reliable and ordered delivery of data.
+
+Therefore:
+    AF_INET + SOCK_STREAM = IPv4 TCP socket
+
+
+3. socket.AF_INET
+-----------------
+Meaning:
+    AF_INET stands for Address Family - Internet.
+
+Purpose:
+    It tells the socket that IPv4 addresses will be used.
+
+Example:
+    127.0.0.1
+
+127.0.0.1 is the IPv4 loopback address and refers to the local computer.
+
+
+4. socket.SOCK_STREAM
+--------------------
+Purpose:
+    Specifies a stream socket.
+
+SOCK_STREAM is normally used with TCP.
+
+TCP provides:
+    - Connection-oriented communication
+    - Reliable data delivery
+    - Ordered delivery
+    - Error detection and retransmission
+
+
+5. HOST
+--------
+Code:
+    HOST = "127.0.0.1"
+
+Purpose:
+    Stores the IP address on which the server will listen and to which the
+    client will connect.
+
+127.0.0.1 means the same computer (localhost).
+
+For communication between two different computers, the server's local
+network IPv4 address can be used instead.
+
+
+6. PORT
+-------
+Code:
+    PORT = 5000
+
+Purpose:
+    A port identifies a particular application or service running on a
+    computer.
+
+The IP address identifies the computer, while the port identifies the
+application/service.
+
+Example:
+    127.0.0.1:5000
+
+Here:
+    127.0.0.1 = IP address
+    5000       = port number
+
+
+========================
+SERVER-SIDE FUNCTIONS
+========================
+
+7. bind()
+----------
+Code:
+    server_socket.bind((HOST, PORT))
+
+Purpose:
+    Assigns an IP address and port number to the server socket.
+
+The server needs to bind before it can listen for incoming connections.
+
+The argument is a tuple:
+    (HOST, PORT)
+
+Example:
+    ("127.0.0.1", 5000)
+
+
+8. listen()
+-----------
+Code:
+    server_socket.listen(1)
+
+Purpose:
+    Changes the server socket into a listening socket.
+
+It tells the operating system that the server is ready to accept incoming
+TCP connection requests.
+
+Argument:
+    1
+
+The value represents the backlog, i.e. the approximate number of
+connections that can wait in the connection queue.
+
+For a simple beginner program, listen(1) is sufficient.
+
+
+9. accept()
+-----------
+Code:
+    client_socket, client_address = server_socket.accept()
+
+Purpose:
+    Accepts an incoming client connection.
+
+accept() waits until a client connects to the server. This is called a
+blocking operation.
+
+It returns two values:
+
+    client_socket
+        A new socket specifically used to communicate with the connected
+        client.
+
+    client_address
+        The client's IP address and port number.
+
+Important:
+    server_socket is used for listening.
+    client_socket is used for actual communication with the client.
+
+This distinction is very important in TCP server programming.
+
+
+10. recv()
+-----------
+Code:
+    message = client_socket.recv(1024)
+
+Purpose:
+    Receives data sent by the client.
+
+Argument:
+    1024
+
+This specifies the maximum number of bytes to receive in this call.
+
+recv() returns data as bytes, not as a normal Python string.
+
+Example:
+    b'Hello Server'
+
+
+11. decode()
+------------
+Code:
+    message = client_socket.recv(1024).decode()
+
+Purpose:
+    Converts received bytes into a Python string.
+
+Sockets transfer data as bytes.
+
+For example:
+    b'Hello Server'
+
+After decode():
+    'Hello Server'
+
+UTF-8 is commonly used for text communication.
+
+
+12. send()
+-----------
+Code:
+    client_socket.send(reply.encode())
+
+Purpose:
+    Sends data through the TCP socket.
+
+send() expects bytes.
+
+Therefore, a string must normally be converted into bytes using encode()
+before sending it.
+
+Example:
+    reply = "Hello Client"
+    client_socket.send(reply.encode())
+
+
+13. encode()
+------------
+Code:
+    message.encode()
+
+Purpose:
+    Converts a Python string into bytes.
+
+Example:
+    "Hello Server".encode()
+
+Result:
+    b'Hello Server'
+
+Why is this required?
+    Network sockets transmit data as bytes rather than Python strings.
+
+
+14. close()
+-----------
+Code:
+    client_socket.close()
+    server_socket.close()
+
+Purpose:
+    Closes the socket and releases the associated network resources.
+
+On the server:
+    client_socket.close()
+        Closes communication with the current client.
+
+    server_socket.close()
+        Stops the listening socket.
+
+On the client:
+    client_socket.close()
+        Closes the connection with the server.
+
+
+========================
+CLIENT-SIDE FUNCTIONS
+========================
+
+15. connect()
+-------------
+Code:
+    client_socket.connect((HOST, PORT))
+
+Purpose:
+    Establishes a TCP connection with the server.
+
+The client provides:
+    - Server IP address
+    - Server port number
+
+Example:
+    client_socket.connect(("127.0.0.1", 5000))
+
+The server must already be running and listening on that port.
+
+
+16. input()
+-----------
+Code:
+    message = input("Enter message: ")
+
+Purpose:
+    Takes input from the user through the keyboard.
+
+The returned value is a Python string.
+
+Example:
+    Enter message: Hello Server
+
+message contains:
+    "Hello Server"
+
+
+17. send() ON CLIENT
+--------------------
+Code:
+    client_socket.send(message.encode())
+
+Purpose:
+    Sends the user's message to the server.
+
+Process:
+    1. input() receives the message as a string.
+    2. encode() converts the string to bytes.
+    3. send() sends those bytes through the TCP connection.
+
+
+18. recv() ON CLIENT
+--------------------
+Code:
+    reply = client_socket.recv(1024).decode()
+
+Purpose:
+    Receives the server's response.
+
+Process:
+    1. recv(1024) receives bytes.
+    2. decode() converts those bytes into a string.
+
+
+========================
+COMPLETE COMMUNICATION FLOW
+========================
+
+SERVER:
+
+1. Create socket
+       |
+       v
+2. bind(HOST, PORT)
+       |
+       v
+3. listen()
+       |
+       v
+4. accept()
+       |
+       v
+5. recv()  <------ Client sends message
+       |
+       v
+6. send()  ------> Client receives reply
+       |
+       v
+7. close()
+
+
+CLIENT:
+
+1. Create socket
+       |
+       v
+2. connect(HOST, PORT)
+       |
+       v
+3. input()
+       |
+       v
+4. encode()
+       |
+       v
+5. send()  ------> Server
+       |
+       v
+6. recv()  <------ Server
+       |
+       v
+7. decode()
+       |
+       v
+8. close()
+
+
+========================
+IMPORTANT TCP CONCEPTS
+========================
+
+19. TCP
+-------
+TCP stands for Transmission Control Protocol.
+
+It is a connection-oriented transport-layer protocol that provides
+reliable, ordered, and error-checked delivery of data between applications.
+
+The Python program uses TCP because it creates the socket with:
+
+    socket.SOCK_STREAM
+
+
+20. Client-Server Model
+-----------------------
+The program follows the client-server model.
+
+Server:
+    Waits for connection requests and provides a service.
+
+Client:
+    Initiates the connection and requests communication with the server.
+
+
+21. Socket
+----------
+A socket is a software endpoint used by an application to communicate over
+a network.
+
+For TCP communication, both the client and server use sockets.
+
+The basic relationship is:
+
+    Client Socket <========== TCP Connection ==========> Server Socket
+
+
+22. IP Address + Port
+---------------------
+A network connection is identified using an IP address and a port.
+
+Example:
+
+    127.0.0.1:5000
+
+IP address:
+    Identifies the host/computer.
+
+Port:
+    Identifies the network application/service.
+
+
+23. Blocking Functions
+----------------------
+Some socket functions wait until an event occurs.
+
+Examples:
+
+    accept()
+        Waits for a client to connect.
+
+    recv()
+        Waits for data to be received.
+
+    connect()
+        Waits while establishing the connection.
+
+For beginner programs, this blocking behavior makes the communication flow
+easy to understand.
+
+
+24. Bytes vs String
+-------------------
+Socket communication works with bytes.
+
+Python string:
+    "Hello"
+
+Bytes:
+    b"Hello"
+
+Before sending:
+    string -> encode() -> bytes
+
+After receiving:
+    bytes -> decode() -> string
+
+Typical pattern:
+
+    send:
+        socket.send(message.encode())
+
+    receive:
+        message = socket.recv(1024).decode()
+
+
+========================
+QUICK FUNCTION TABLE
+========================
+
+Function/Method          Purpose
+---------------------------------------------------------------
+socket.socket()          Creates a socket
+AF_INET                   Uses IPv4
+SOCK_STREAM               Creates a TCP socket
+bind()                    Assigns IP address and port to server
+listen()                  Makes server listen for connections
+accept()                  Accepts a client connection
+connect()                 Connects client to server
+send()                    Sends bytes through socket
+recv()                    Receives bytes from socket
+encode()                  Converts string to bytes
+decode()                  Converts bytes to string
+input()                   Takes user input
+close()                   Closes the socket
+
+
+========================
+MOST IMPORTANT EXAM POINT
+========================
+
+TCP SERVER ORDER:
+
+    socket()
+       |
+    bind()
+       |
+    listen()
+       |
+    accept()
+       |
+    recv()/send()
+       |
+    close()
+
+
+TCP CLIENT ORDER:
+
+    socket()
+       |
+    connect()
+       |
+    send()/recv()
+       |
+    close()
+
+
+Remember:
+
+    SERVER = socket -> bind -> listen -> accept -> communicate -> close
+
+    CLIENT = socket -> connect -> communicate -> close
