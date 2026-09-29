@@ -1,0 +1,917 @@
+PYTHON TCP SOCKET PROGRAM - MULTIPLE CLIENTS
+===============================================
+
+This program is a beginner-level TCP client-server program.
+
+It has four main features:
+
+1. Multiple clients can connect to the same server.
+2. A client can send multiple messages without reconnecting.
+3. The client can end its connection by sending "exit".
+4. The server stores each client's communication in a separate log file.
+
+The program uses TCP through:
+
+    socket.AF_INET
+    socket.SOCK_STREAM
+
+
+================================================
+1. IMPORT SOCKET
+================================================
+
+Code:
+
+    import socket
+
+Purpose:
+
+    socket is Python's built-in module for network communication.
+
+It provides the functions and methods needed to:
+
+    - create sockets
+    - connect clients and servers
+    - send data
+    - receive data
+    - close connections
+
+A socket is a software endpoint through which two programs communicate.
+
+
+================================================
+2. IMPORT THREADING
+================================================
+
+Code:
+
+    import threading
+
+Purpose:
+
+    threading allows the server to handle multiple clients at the
+    same time.
+
+Without threading:
+
+    Client 1 connects
+        |
+        v
+    Server communicates with Client 1
+        |
+        v
+    Client 1 finishes
+        |
+        v
+    Server accepts Client 2
+
+This means Client 2 has to wait.
+
+With threading:
+
+    Client 1 ---> Thread 1
+    Client 2 ---> Thread 2
+    Client 3 ---> Thread 3
+
+The main server can continue accepting new clients while existing
+clients are being handled.
+
+
+================================================
+3. IMPORT OS
+================================================
+
+Code:
+
+    import os
+
+Purpose:
+
+    os provides functions for working with the operating system.
+
+In this program it is used to create the logs folder:
+
+    os.makedirs("logs", exist_ok=True)
+
+If the folder does not exist, Python creates it.
+
+If it already exists, exist_ok=True prevents an error.
+
+
+================================================
+4. socket.socket()
+================================================
+
+Code:
+
+    server_socket = socket.socket(
+        socket.AF_INET,
+        socket.SOCK_STREAM
+    )
+
+Purpose:
+
+    Creates a TCP socket.
+
+Arguments:
+
+    socket.AF_INET
+        Uses IPv4 addresses.
+
+    socket.SOCK_STREAM
+        Creates a TCP socket.
+
+Therefore:
+
+    AF_INET + SOCK_STREAM = IPv4 TCP socket
+
+
+================================================
+5. AF_INET
+================================================
+
+AF_INET means Address Family - Internet.
+
+It tells Python that the socket will use IPv4 addresses.
+
+Example:
+
+    127.0.0.1
+
+127.0.0.1 is the localhost/loopback address.
+
+It means the server and client are running on the same computer.
+
+
+================================================
+6. SOCK_STREAM
+================================================
+
+Code:
+
+    socket.SOCK_STREAM
+
+Purpose:
+
+    Specifies a stream socket and is used for TCP communication.
+
+TCP is:
+
+    - connection-oriented
+    - reliable
+    - ordered
+    - based on a continuous byte stream
+
+The program therefore uses TCP rather than UDP.
+
+
+================================================
+7. HOST
+================================================
+
+Code:
+
+    HOST = "127.0.0.1"
+
+Purpose:
+
+    Specifies the IP address on which the server listens.
+
+127.0.0.1 means the local computer.
+
+For computers communicating over a local network, the server can
+instead use an appropriate local network IP address.
+
+
+================================================
+8. PORT
+================================================
+
+Code:
+
+    PORT = 5000
+
+Purpose:
+
+    A port identifies a particular network service/application.
+
+Example:
+
+    127.0.0.1:5000
+
+Here:
+
+    127.0.0.1 = IP address
+    5000      = port
+
+
+================================================
+9. bind()
+================================================
+
+Code:
+
+    server_socket.bind((HOST, PORT))
+
+Purpose:
+
+    Assigns the IP address and port to the server socket.
+
+The server must bind before listening for connections.
+
+The argument is a tuple:
+
+    (HOST, PORT)
+
+
+================================================
+10. listen()
+================================================
+
+Code:
+
+    server_socket.listen(5)
+
+Purpose:
+
+    Changes the server socket into a listening socket.
+
+It tells the operating system that the server is ready to accept
+incoming TCP connection requests.
+
+The value 5 is the backlog.
+
+It represents the approximate number of connections that can wait
+in the connection queue.
+
+The server can still handle many clients; the important point is
+that accepted clients are handled by separate threads.
+
+
+================================================
+11. accept()
+================================================
+
+Code:
+
+    client_socket, client_address = server_socket.accept()
+
+Purpose:
+
+    Accepts an incoming client connection.
+
+accept() is a blocking method.
+
+It waits until a client tries to connect.
+
+It returns:
+
+    client_socket
+        A new socket used to communicate with that client.
+
+    client_address
+        The client's IP address and port number.
+
+Important:
+
+    server_socket
+        Used to listen for new clients.
+
+    client_socket
+        Used to communicate with one connected client.
+
+
+================================================
+12. while True FOR MULTIPLE CLIENTS
+================================================
+
+Code:
+
+    while True:
+        client_socket, client_address = server_socket.accept()
+
+Purpose:
+
+    Keeps the server running continuously.
+
+Without this loop, the server would accept only one client.
+
+With this loop:
+
+    Server
+      |
+      +---- Client 1
+      |
+      +---- Client 2
+      |
+      +---- Client 3
+      |
+      +---- Client 4
+
+The server keeps accepting new connections.
+
+
+================================================
+13. threading.Thread()
+================================================
+
+Code:
+
+    client_thread = threading.Thread(
+        target=handle_client,
+        args=(client_socket, client_address)
+    )
+
+Purpose:
+
+    Creates a new thread for a connected client.
+
+target:
+
+    Specifies the function that the thread will execute.
+
+args:
+
+    Sends the client socket and client address to that function.
+
+
+================================================
+14. start()
+================================================
+
+Code:
+
+    client_thread.start()
+
+Purpose:
+
+    Starts the new thread.
+
+The thread then executes:
+
+    handle_client(client_socket, client_address)
+
+This allows the server to immediately return to the main loop
+and accept another client.
+
+
+================================================
+15. handle_client()
+================================================
+
+Code:
+
+    def handle_client(client_socket, client_address):
+
+Purpose:
+
+    Handles all communication with one particular client.
+
+Each client gets its own execution of this function.
+
+The function:
+
+    1. Creates the client's log file.
+    2. Receives messages.
+    3. Stores messages in the log.
+    4. Sends replies.
+    5. Checks for "exit".
+    6. Closes the client connection.
+
+
+================================================
+16. recv()
+================================================
+
+Code:
+
+    message = client_socket.recv(1024).decode()
+
+Purpose:
+
+    Receives data sent by the client.
+
+1024 means that this call can receive up to 1024 bytes.
+
+recv() returns bytes.
+
+Therefore decode() is used to convert those bytes into a string.
+
+
+================================================
+17. decode()
+================================================
+
+Code:
+
+    data.decode()
+
+Purpose:
+
+    Converts bytes received from the socket into a Python string.
+
+Example:
+
+    b"Hello"
+
+becomes:
+
+    "Hello"
+
+
+================================================
+18. encode()
+================================================
+
+Code:
+
+    message.encode()
+
+Purpose:
+
+    Converts a Python string into bytes.
+
+Sockets send bytes.
+
+Example:
+
+    "Hello".encode()
+
+becomes:
+
+    b"Hello"
+
+
+================================================
+19. send()
+================================================
+
+Code:
+
+    client_socket.send(reply.encode())
+
+Purpose:
+
+    Sends bytes to the connected client.
+
+Typical process:
+
+    Python string
+          |
+       encode()
+          |
+        bytes
+          |
+        send()
+          |
+        client
+
+
+================================================
+20. CLIENT COMMUNICATION LOOP
+================================================
+
+The client uses:
+
+    while True:
+
+This allows the client to send many messages without creating a
+new TCP connection every time.
+
+Flow:
+
+    Connect
+       |
+       v
+    Enter message
+       |
+       v
+    Send message
+       |
+       v
+    Receive reply
+       |
+       v
+    Enter another message
+       |
+       v
+    Continue...
+
+
+================================================
+21. EXIT MECHANISM
+================================================
+
+The client can type:
+
+    exit
+
+The server checks:
+
+    if message.lower() == "exit":
+
+lower() converts the message to lowercase.
+
+Therefore all of these can work:
+
+    exit
+    EXIT
+    Exit
+    ExIt
+
+When "exit" is received:
+
+    1. Server sends a goodbye message.
+    2. Server breaks out of the communication loop.
+    3. Client also breaks out of its loop.
+    4. The client socket is closed.
+
+
+================================================
+22. LOG FILE SYSTEM
+================================================
+
+The server creates:
+
+    logs/
+
+inside the same project folder.
+
+Each client gets a separate file.
+
+Example:
+
+    logs/
+        client_127_0_0_1_53120.txt
+        client_127_0_0_1_53121.txt
+        client_127_0_0_1_53122.txt
+
+The IP address and port are used to create a different filename
+for each client connection.
+
+
+================================================
+23. open()
+================================================
+
+Code:
+
+    with open(log_file, "a") as file:
+
+Purpose:
+
+    Opens the client's log file.
+
+"a" means append mode.
+
+Append mode is useful because new messages are added to the end
+of the file instead of deleting previous messages.
+
+The with statement automatically closes the file after the block
+finishes.
+
+
+================================================
+24. file.write()
+================================================
+
+Code:
+
+    file.write("Client: " + message + "\n")
+
+Purpose:
+
+    Writes communication data into the client's log file.
+
+Example log:
+
+    Client connected: ('127.0.0.1', 53120)
+    Client: Hello
+    Server: Message received by the server!
+    Client: How are you?
+    Server: Message received by the server!
+    Client: exit
+    Server: Connection closed. Goodbye!
+
+
+================================================
+25. client_address
+================================================
+
+Code:
+
+    client_address[0]
+    client_address[1]
+
+client_address contains:
+
+    client_address[0]
+        Client IP address
+
+    client_address[1]
+        Client port number
+
+Example:
+
+    ('127.0.0.1', 53120)
+
+Here:
+
+    127.0.0.1 = client IP
+    53120     = client's temporary port
+
+
+================================================
+26. close()
+================================================
+
+Code:
+
+    client_socket.close()
+
+Purpose:
+
+    Closes the TCP connection with that client.
+
+The server's main listening socket is not closed after one client
+finishes because the server must continue accepting new clients.
+
+This is an important difference from the original program.
+
+
+================================================
+27. COMPLETE SERVER FLOW
+================================================
+
+    socket()
+       |
+       v
+    bind()
+       |
+       v
+    listen()
+       |
+       v
+    while True
+       |
+       v
+    accept()
+       |
+       v
+    create thread
+       |
+       v
+    handle_client()
+       |
+       +---- recv()
+       |
+       +---- write log
+       |
+       +---- send()
+       |
+       +---- repeat until "exit"
+       |
+       v
+    close client socket
+       |
+       v
+    Server continues accepting clients
+
+
+================================================
+28. COMPLETE CLIENT FLOW
+================================================
+
+    socket()
+       |
+       v
+    connect()
+       |
+       v
+    while True
+       |
+       v
+    input()
+       |
+       v
+    encode()
+       |
+       v
+    send()
+       |
+       v
+    recv()
+       |
+       v
+    decode()
+       |
+       v
+    if "exit"
+       |
+      yes
+       |
+       v
+    close()
+       |
+       v
+    End
+
+
+================================================
+29. MULTIPLE CLIENT ARCHITECTURE
+================================================
+
+The server uses one main thread to accept clients.
+
+Each connected client gets a separate thread.
+
+Example:
+
+                    SERVER
+                      |
+               server_socket
+                      |
+            +---------+---------+
+            |         |         |
+            v         v         v
+         Thread 1  Thread 2  Thread 3
+            |         |         |
+         Client 1  Client 2  Client 3
+            |         |         |
+         Log 1      Log 2      Log 3
+
+
+This is a simple beginner-level approach to concurrent client
+handling.
+
+
+================================================
+30. TCP
+================================================
+
+TCP stands for Transmission Control Protocol.
+
+TCP is a connection-oriented transport-layer protocol.
+
+It provides:
+
+    - reliable data delivery
+    - ordered delivery
+    - error checking
+    - retransmission of lost data
+    - connection-oriented communication
+
+This program uses TCP because:
+
+    socket.SOCK_STREAM
+
+is used when creating the socket.
+
+
+================================================
+31. CLIENT-SERVER MODEL
+================================================
+
+Server:
+
+    - waits for connections
+    - accepts clients
+    - communicates with clients
+    - maintains client logs
+
+Client:
+
+    - initiates the connection
+    - sends messages
+    - receives replies
+    - decides when to exit
+
+
+================================================
+32. BLOCKING FUNCTIONS
+================================================
+
+Some socket methods wait until an event occurs.
+
+accept():
+
+    Waits for a client to connect.
+
+recv():
+
+    Waits for data from a client.
+
+connect():
+
+    Waits while establishing a connection.
+
+For this beginner program, blocking communication is intentionally
+used because it keeps the networking logic simple.
+
+
+================================================
+33. BYTES AND STRINGS
+================================================
+
+Socket communication works with bytes.
+
+Before sending:
+
+    string
+       |
+    encode()
+       |
+    bytes
+       |
+    send()
+
+
+After receiving:
+
+    recv()
+       |
+    bytes
+       |
+    decode()
+       |
+    string
+
+
+================================================
+34. QUICK FUNCTION TABLE
+================================================
+
+Function/Method             Purpose
+---------------------------------------------------------------
+socket.socket()             Creates a socket
+AF_INET                     Uses IPv4
+SOCK_STREAM                 Uses TCP
+bind()                      Assigns IP and port to server
+listen()                    Makes server listen
+accept()                    Accepts a client
+connect()                   Connects client to server
+Thread()                    Creates a client-handling thread
+start()                     Starts the thread
+handle_client()             Handles one client
+send()                      Sends bytes
+recv()                      Receives bytes
+encode()                    Converts string to bytes
+decode()                    Converts bytes to string
+input()                     Takes keyboard input
+open()                      Opens a log file
+write()                     Writes data to log
+lower()                     Converts text to lowercase
+close()                     Closes a socket
+os.makedirs()               Creates the logs folder
+
+
+================================================
+35. MOST IMPORTANT EXAM POINTS
+================================================
+
+TCP SERVER ORDER:
+
+    socket()
+       |
+    bind()
+       |
+    listen()
+       |
+    accept()
+       |
+    Thread()
+       |
+    recv()/send()
+       |
+    close()
+
+
+TCP CLIENT ORDER:
+
+    socket()
+       |
+    connect()
+       |
+    send()/recv()
+       |
+    close()
+
+
+For multiple clients:
+
+    SERVER
+       |
+       +--> accept Client 1 --> Thread 1
+       |
+       +--> accept Client 2 --> Thread 2
+       |
+       +--> accept Client 3 --> Thread 3
+
+
+Remember:
+
+    SERVER =
+    socket -> bind -> listen -> accept -> thread -> communicate -> close
+
+    CLIENT =
+    socket -> connect -> communicate -> close
